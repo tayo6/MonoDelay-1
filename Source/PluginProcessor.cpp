@@ -99,6 +99,11 @@ void MonoDelayAudioProcessor::releaseResources()
 {
 }
 
+juce::AudioProcessorEditor* MonoDelayAudioProcessor::createEditor()
+{
+    return new MonoDelayAudioProcessorEditor(*this);
+}
+
 void MonoDelayAudioProcessor::updateFilters()
 {
     float loFreq = loFilterParam->load();
@@ -238,8 +243,8 @@ void MonoDelayAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
             input += buffer.getReadPointer(ch)[sample];
         input /= static_cast<float>(juce::jmax(1, numChannels));
 
-        delayLineLeft.pushSample(0, static_cast<float>(input));
-        delayLineRight.pushSample(0, static_cast<float>(input));
+        delayLineLeft.pushSample(0, input);
+        delayLineRight.pushSample(0, input);
 
         float wetLeft = 0.0f;
         float wetRight = 0.0f;
