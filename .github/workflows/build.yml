@@ -10,7 +10,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Configure CMake
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
@@ -19,7 +19,7 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: MonoDelay-VST3-Windows
-          path: build/MonoDelay_artefacts/Release/VST3/
+          path: build/mono delay_artefacts/Release/VST3/
