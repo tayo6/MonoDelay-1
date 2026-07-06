@@ -18,8 +18,13 @@ jobs:
       - name: Build VST3
         run: cmake --build build --config Release --parallel
 
+      - name: List build output
+        shell: pwsh
+        run: Get-ChildItem -Recurse -Path "build/MonoDelay_artefacts/Release/VST3/"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: MonoDelay-VST3-Windows
-          path: build/mono delay_artefacts/Release/VST3/
+          path: build/MonoDelay_artefacts/Release/VST3/**/*
+          if-no-files-found: error
