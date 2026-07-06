@@ -32,7 +32,8 @@ MonoDelayAudioProcessorEditor::MonoDelayAudioProcessorEditor(MonoDelayAudioProce
     addAndMakeVisible(hiFilterDisplay);
     addAndMakeVisible(widthDisplay);
 
-    addAndMakeVisible(velocityPipeEditor);
+    velocityPipeEditor = std::make_unique<VelocityPipeEditor>(processor);
+    addAndMakeVisible(*velocityPipeEditor);
 
     delayLabel.setText("DELAY", juce::dontSendNotification);
     delayLabel.setFont(juce::Font("Arial", 10, juce::Font::plain));
@@ -131,7 +132,7 @@ void MonoDelayAudioProcessorEditor::resized()
 
     bounds.removeFromTop(10);
 
-    velocityPipeEditor.setBounds(bounds.removeFromTop(360));
+    velocityPipeEditor->setBounds(bounds.removeFromTop(360));
 
     bounds.removeFromTop(10);
 
@@ -171,32 +172,32 @@ void MonoDelayAudioProcessorEditor::timerCallback()
             "1/2.", "1/4.", "1/8.", "1/16.", "1/32.",
             "1/4T", "1/8T", "1/16T", "1/32T", "1/64T"
         };
-        delayDisplay.setText(noteNames[noteIndex], juce::dontSendNotification);
+        delayDisplay.setText(noteNames[noteIndex]);
     }
     else
     {
         float ms = 1.0f + (delayVal * 999.0f);
-        delayDisplay.setText(juce::String(ms, 1) + " ms", juce::dontSendNotification);
+        delayDisplay.setText(juce::String(ms, 1) + " ms");
     }
 
     float feedback = processor.getAPVTS().getRawParameterValue("feedback")->load();
-    feedbackDisplay.setText(juce::String(feedback, 1) + " %", juce::dontSendNotification);
+    feedbackDisplay.setText(juce::String(feedback, 1) + " %");
 
     float mix = processor.getAPVTS().getRawParameterValue("mix")->load();
-    mixDisplay.setText(juce::String(mix, 1) + " %", juce::dontSendNotification);
+    mixDisplay.setText(juce::String(mix, 1) + " %");
 
     float loFreq = processor.getAPVTS().getRawParameterValue("loFilter")->load();
     if (loFreq >= 1000.0f)
-        loFilterDisplay.setText(juce::String(loFreq / 1000.0f, 1) + " kHz", juce::dontSendNotification);
+        loFilterDisplay.setText(juce::String(loFreq / 1000.0f, 1) + " kHz");
     else
-        loFilterDisplay.setText(juce::String(juce::roundToInt(loFreq)) + " Hz", juce::dontSendNotification);
+        loFilterDisplay.setText(juce::String(juce::roundToInt(loFreq)) + " Hz");
 
     float hiFreq = processor.getAPVTS().getRawParameterValue("hiFilter")->load();
     if (hiFreq >= 1000.0f)
-        hiFilterDisplay.setText(juce::String(hiFreq / 1000.0f, 1) + " kHz", juce::dontSendNotification);
+        hiFilterDisplay.setText(juce::String(hiFreq / 1000.0f, 1) + " kHz");
     else
-        hiFilterDisplay.setText(juce::String(juce::roundToInt(hiFreq)) + " Hz", juce::dontSendNotification);
+        hiFilterDisplay.setText(juce::String(juce::roundToInt(hiFreq)) + " Hz");
 
     float width = processor.getAPVTS().getRawParameterValue("width")->load();
-    widthDisplay.setText(juce::String(width, 1) + " %", juce::dontSendNotification);
+    widthDisplay.setText(juce::String(width, 1) + " %");
 }
