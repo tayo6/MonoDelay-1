@@ -1,0 +1,120 @@
+name: Rust WASM Build & Preview
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'rust-ui/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'rust-ui/**'
+  workflow_dispatch:
+
+concurrency:
+  group: wasm-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-wasm:
+    name: Build WASM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          components: rust-src
+
+      - name: Install wasm-bindgen
+        run: |
+          rustup component add rust-src
+          cargo install wasm-bindgen-cli
+
+      - name: Cache cargo dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust-ui/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('rust-ui/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build WASM module
+        working-directory: rust-ui
+        run: |
+          # Build the library as WASM
+          cargo build --target wasm32-unknown-unknown --release --lib
+          
+          # Run wasm-bindgen to generate JS bindings
+          wasm-bindgen --target web --out-dir ./web/pkg \
+            --no-typescript \
+            ./target/wasm32-unknown-unknown/release/monodelay_knobs.wasm
+          
+          # Copy the WASM file to web directory
+          cp ./target/wasm32-unknown-unknown/release/monodelay_knobs.wasm ./web/pkg/
+          
+          # Create a version file for cache busting
+          echo "const VERSION = '${{ github.sha }}';" > ./web/pkg/version.js
+
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-build
+          path: rust-ui/web/
+          retention-days: 7
+
+  deploy-preview:
+    name: Deploy Preview
+    needs: build-wasm
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Download WASM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-build
+          path: rust-ui/web/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: rust-ui/web/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  serve-local:
+    name: Local Preview (GitHub Pages)
+    needs: deploy-preview
+    runs-on: ubuntu-latest
+    if: always() && github.event_name != 'pull_request'
+    
+    steps:
+      - name: Output preview URL
+        run: |
+          echo "Preview available at: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/rust-ui/web/"
+          echo "Or via GitHub Pages settings"
